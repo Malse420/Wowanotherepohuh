@@ -1,0 +1,8 @@
+[
+    {
+        "name": "Server1",
+        "address": "example.com",
+        "port": 22,
+        "username": "user"
+    }
+]

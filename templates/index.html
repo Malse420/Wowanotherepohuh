@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSH File Browser</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .pane {
+            float: left;
+            width: 45%;
+            margin: 2%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .progress {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 0;
+            height: 20px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>SSH File Browser</h1>
+    <form action="{{ url_for('connect') }}" method="post">
+        <label for="server">Server:</label>
+        <input type="text" name="server" required><br>
+        <label for="port">Port:</label>
+        <input type="number" name="port" value="22" required><br>
+        <label for="user">Username:</label>
+        <input type="text" name="user" required><br>
+        <label for="password">Password:</label>
+        <input type="password" name="password" required><br>
+        <label for="remote_path">Remote Path:</label>
+        <input type="text" name="remote_path" value="/" required><br>
+        <button type="submit">Connect</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <div class="pane">
+        <h2>Local Files</h2>
+        <ul>
+        {% for file in local_files %}
+            <li><input type="checkbox" name="local_files" value="{{ file }}"> {{ file }}</li>
+        {% endfor %}
+        </ul>
+        <button onclick="batchUpload()">Batch Upload</button>
+    </div>
+    <div class="pane">
+        <h2>Remote Files</h2>
+        {% if remote_files %}
+        <ul>
+        {% for file in remote_files %}
+            <li><input type="checkbox" name="remote_files" value="{{ file }}"> {{ file }} <button onclick="previewFile('{{ file }}')">Preview</button></li>
+        {% endfor %}
+        </ul>
+        <button onclick="batchDownload()">Batch Download</button>
+        {% else %}
+        <p>Connect to a server to view remote files.</p>
+        {% endif %}
+    </div>
+    <div style="clear: both;"></div>
+    <!-- Add forms for file upload and download -->
+    <form action="{{ url_for('download') }}" method="post">
+        <input type="hidden" name="server" value="{{ server }}">
+        <input type="hidden" name="port" value="{{ port }}">
+        <input type="hidden" name="user" value="{{ user }}">
+        <input type="hidden" name="password" value="{{ password }}">
+        <label for="remote_file">Remote File:</label>
+        <input type="text" name="remote_file" required>
+        <label for="local_file">Local File:</label>
+        <input type="text" name="local_file" required>
+        <button type="submit">Download</button>
+        <div class="progress">
+            <div class="progress-bar" id="download-progress"></div>
+        </div>
+    </form>
+
+    <form action="{{ url_for('upload') }}" method="post">
+        <input type="hidden" name="server" value="{{ server }}">
+        <input type="hidden" name="port" value="{{ port }}">
+        <input type="hidden" name="user" value="{{ user }}">
+        <input type="hidden" name="password" value="{{ password }}">
+        <label for="local_file">Local File:</label>
+        <input type="text" name="local_file" required>
+        <label for="remote_file">Remote File:</label>
+        <input type="text" name="remote_file" required>
+        <button type="submit">Upload</button>
+        <div class="progress">
+            <div class="progress-bar" id="upload-progress"></div>
+        </div>
+    </form>
+    <!-- Modal for file preview -->
+    <div id="filePreviewModal" style="display:none;">
+        <div>
+            <h2>File Preview</h2>
+            <pre id="fileContent"></pre>
+            <button onclick="closePreview()">Close</button>
+        </div>
+    </div>
+    <script>
+        // JavaScript to update progress bars (this is a placeholder, actual implementation may vary)
+        function updateProgressBar(id, value) {
+            document.getElementById(id).style.width = value + '%';
+            document.getElementById(id).innerText = value + '%';
+        }
+
+        // JavaScript for batch operations
+        function batchUpload() {
+            // Collect selected local files and initiate upload
+            const selectedFiles = Array.from(document.querySelectorAll('input[name="local_files"]:checked')).map(el => el.value);
+            console.log('Batch upload:', selectedFiles);
+            // Implement batch upload logic here
+        }
+
+        function batchDownload() {
+            // Collect selected remote files and initiate download
+            const selectedFiles = Array.from(document.querySelectorAll('input[name="remote_files"]:checked')).map(el => el.value);
+            console.log('Batch download:', selectedFiles);
+            // Implement batch download logic here
+        }
+
+        // JavaScript for file preview
+        function previewFile(file) {
+            fetch(`/preview_file?file=${encodeURIComponent(file)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('fileContent').innerText = data.content;
+                    document.getElementById('filePreviewModal').style.display = 'block';
+                })
+                .catch(error => console.error('Error fetching file preview:', error));
+        }
+
+        function closePreview() {
+            document.getElementById('filePreviewModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
